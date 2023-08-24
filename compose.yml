@@ -1,0 +1,41 @@
+# https://stackoverflow.com/questions/54078707/define-local-variable-in-docker-compose-yml
+x-var: &CONTAINER_NAME_MC ${CONTAINER_NAME_MC:?err}
+services:
+  mc:
+    container_name: *CONTAINER_NAME_MC
+    image: itzg/minecraft-server:java17
+    restart: on-failure
+    ports:
+      - "4567:4567"
+    tty: true
+    stdin_open: true
+    volumes:
+      - type: bind
+        source: "./data"
+        target: "/data"
+        bind:
+          propagation: shared
+      - type: bind
+        source: "/etc/timezone"
+        target: "/etc/timezone"
+        read_only: true
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "${MC_VERSION?err}"
+      MEMORY: "${MC_SERVER_MAX_MEMORY:?err}"
+      USE_AIKAR_FLAGS: "TRUE"
+      LOG_TIMESTAMP: "TRUE"
+      DEBUG_HELPER: "TRUE"
+    deploy:
+      resources:
+        limits:
+          memory: "${MC_CONTAINER_MAX_MEMORY:?err}"
+    entrypoint:
+      - /data/start.sh
+  tunnel:
+    restart: always
+    image: cloudflare/cloudflared
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: "${TUNNEL_TOKEN:?err}"
